@@ -1,0 +1,12 @@
+services:
+  billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '${PORT:-3000}:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      TRANSACTION_FEE_GBP: ${TRANSACTION_FEE_GBP:-0.20}
+    restart: unless-stopped
