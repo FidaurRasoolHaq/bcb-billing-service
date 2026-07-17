@@ -1,4 +1,5 @@
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
+import { Transform, TransformFnParams } from 'class-transformer';
 import {
   IsInt,
   IsNumber,
@@ -9,6 +10,10 @@ import {
   Min,
 } from 'class-validator';
 
+function trimIfString({ value }: TransformFnParams): unknown {
+  return typeof value === 'string' ? value.trim() : value;
+}
+
 export class CreateAccountDto {
   @ApiPropertyOptional({
     description:
@@ -16,6 +21,7 @@ export class CreateAccountDto {
     example: 'acc-123',
   })
   @IsOptional()
+  @Transform(trimIfString)
   @IsString()
   @Length(1, 64)
   accountId?: string;

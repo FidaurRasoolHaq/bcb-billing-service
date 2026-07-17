@@ -31,7 +31,7 @@ export class AccountsService {
       dto.currency,
     );
 
-    const accountId = dto.accountId?.trim() || randomUUID();
+    const accountId = dto.accountId ?? randomUUID();
     const existing = await this.accountRepository.findById(accountId);
     if (existing) {
       throw new AccountAlreadyExistsException(accountId);

@@ -46,31 +46,36 @@ export class BillingCalculatorService {
         input.transactionFeeGbp,
       );
 
-    const discountAmountGbp =
-      discountableBaseFeeGbp * (input.discountRate / 100);
+    const roundedBaseFeeGbp = roundGbp(proratedBaseFeeGbp);
+    const roundedTransactionFeesGbp = roundGbp(transactionFeesGbp);
+    const roundedDiscountableAmountGbp = roundGbp(discountableBaseFeeGbp);
 
-    const subtotalGbp = proratedBaseFeeGbp + transactionFeesGbp;
-    const totalGbp = subtotalGbp - discountAmountGbp;
+    const roundedDiscountAmountGbp = roundGbp(
+      roundedDiscountableAmountGbp * (input.discountRate / 100),
+    );
+
+    const subtotalGbp = roundGbp(roundedBaseFeeGbp + roundedTransactionFeesGbp);
+    const totalGbp = roundGbp(subtotalGbp - roundedDiscountAmountGbp);
 
     const breakdown: BillBreakdown = {
       baseFee: {
         monthlyFeeGbp: input.monthlyFeeGbp,
         daysInPeriod: totalDaysInPeriod,
-        proratedAmountGbp: roundGbp(proratedBaseFeeGbp),
+        proratedAmountGbp: roundedBaseFeeGbp,
       },
       transactionFees: {
         transactionCount: input.transactionCount,
         threshold: input.transactionThreshold,
         excessTransactions,
         feePerTransactionGbp: input.transactionFeeGbp,
-        amountGbp: roundGbp(transactionFeesGbp),
+        amountGbp: roundedTransactionFeesGbp,
       },
       discount: {
         discountRatePercent: input.discountRate,
         discountDaysInPeriod,
         totalDaysInPeriod,
-        discountableAmountGbp: roundGbp(discountableBaseFeeGbp),
-        discountAmountGbp: roundGbp(discountAmountGbp),
+        discountableAmountGbp: roundedDiscountableAmountGbp,
+        discountAmountGbp: roundedDiscountAmountGbp,
       },
     };
 
@@ -79,8 +84,8 @@ export class BillingCalculatorService {
       billingPeriodStart: periodStart.toISOString().slice(0, 10),
       billingPeriodEnd: periodEnd.toISOString().slice(0, 10),
       breakdown,
-      subtotalGbp: roundGbp(subtotalGbp),
-      totalGbp: roundGbp(totalGbp),
+      subtotalGbp,
+      totalGbp,
     };
   }
 

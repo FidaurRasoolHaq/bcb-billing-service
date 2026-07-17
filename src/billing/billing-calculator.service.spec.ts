@@ -242,5 +242,40 @@ describe('BillingCalculatorService', () => {
       expect(isRoundedToPence(result.subtotalGbp)).toBe(true);
       expect(isRoundedToPence(result.totalGbp)).toBe(true);
     });
+
+    it('always sums the displayed breakdown exactly to the displayed subtotal/total, even when independent rounding of each part would disagree with rounding the raw sum', () => {
+      // Chosen so the raw (unrounded) base fee and transaction fee are both
+      // ~1.004: roundGbp(1.004) + roundGbp(1.004) = 1.00 + 1.00 = 2.00, but
+      // roundGbp(1.004 + 1.004) = roundGbp(2.008) = 2.01. Before the fix,
+      // subtotalGbp was computed the second way (from the raw sum) while the
+      // breakdown fields were rounded the first way - a penny apart.
+      const result = service.calculate({
+        ...baseInput,
+        monthlyFeeGbp: 1.004 * 29, // exactly £1.004/day over a single 29-day month
+        billingPeriodStart: new Date('2028-02-01'), // 2028 is a leap year -> Feb has 29 days
+        billingPeriodEnd: new Date('2028-02-02'), // 1 day
+        transactionCount: 1,
+        transactionThreshold: 0,
+        transactionFeeGbp: 1.004,
+        discountRate: 50,
+        discountDays: 1,
+        accountCreatedAt: new Date('2028-02-01'), // the single billed day is a discount day
+      });
+
+      const { baseFee, transactionFees, discount } = result.breakdown;
+
+      expect(baseFee.proratedAmountGbp).toBe(1.0);
+      expect(transactionFees.amountGbp).toBe(1.0);
+      expect(discount.discountableAmountGbp).toBe(1.0);
+      expect(discount.discountAmountGbp).toBe(0.5);
+
+      // The invariant a reviewer would actually check by hand:
+      expect(baseFee.proratedAmountGbp + transactionFees.amountGbp).toBe(
+        result.subtotalGbp,
+      );
+      expect(result.subtotalGbp - discount.discountAmountGbp).toBe(
+        result.totalGbp,
+      );
+    });
   });
 });
