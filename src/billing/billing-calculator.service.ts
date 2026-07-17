@@ -13,7 +13,6 @@ import type {
   BillResult,
 } from './interfaces/bill-calculation.interface';
 
-
 // Standalone calculation engine to test in isolation
 // Billing Period is [start, end) measured in whole days
 // UTC midnight is used to normalize the billing period and discount window
@@ -47,7 +46,8 @@ export class BillingCalculatorService {
         input.transactionFeeGbp,
       );
 
-    const discountAmountGbp = discountableBaseFeeGbp * (input.discountRate / 100);
+    const discountAmountGbp =
+      discountableBaseFeeGbp * (input.discountRate / 100);
 
     const subtotalGbp = proratedBaseFeeGbp + transactionFeesGbp;
     const totalGbp = subtotalGbp - discountAmountGbp;
@@ -83,7 +83,6 @@ export class BillingCalculatorService {
       totalGbp: roundGbp(totalGbp),
     };
   }
-
 
   private calculateBaseFeeAndDiscountOverlap(
     daysInPeriod: Date[],
