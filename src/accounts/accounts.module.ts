@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BillingModule } from '../billing/billing.module';
 import { CurrenciesModule } from '../currencies/currencies.module';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
@@ -6,7 +7,7 @@ import { AccountRepository } from './repositories/account.repository';
 import { InMemoryAccountRepository } from './repositories/in-memory-account.repository';
 
 @Module({
-  imports: [CurrenciesModule],
+  imports: [CurrenciesModule, BillingModule],
   controllers: [AccountsController],
   // Can eventually be swapped out for a persistent repository
   providers: [

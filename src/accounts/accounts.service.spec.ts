@@ -1,9 +1,12 @@
+import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { BillingCalculatorService } from '../billing/billing-calculator.service';
 import {
   AccountAlreadyExistsException,
   AccountNotFoundException,
   CurrencyNotFoundException,
 } from '../common/exceptions';
+import configuration from '../config/configuration';
 import { CurrenciesService } from '../currencies/currencies.service';
 import { CurrencyRepository } from '../currencies/repositories/currency.repository';
 import { InMemoryCurrencyRepository } from '../currencies/repositories/in-memory-currency.repository';
@@ -17,9 +20,13 @@ describe('AccountsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({ load: [configuration], ignoreEnvFile: true }),
+      ],
       providers: [
         AccountsService,
         CurrenciesService,
+        BillingCalculatorService,
         { provide: AccountRepository, useClass: InMemoryAccountRepository },
         { provide: CurrencyRepository, useClass: InMemoryCurrencyRepository },
       ],
@@ -108,6 +115,38 @@ describe('AccountsService', () => {
       await expect(service.getByIdOrThrow('missing')).rejects.toThrow(
         AccountNotFoundException,
       );
+    });
+  });
+
+  describe('calculateBill', () => {
+    it('resolves the account and currency and returns a bill including the accountId', async () => {
+      await service.create({
+        accountId: 'acc-bill',
+        currency: 'GBP',
+        transactionThreshold: 100,
+        discountDays: 0,
+        discountRate: 0,
+      });
+
+      const bill = await service.calculateBill('acc-bill', {
+        billingPeriodStart: '2026-01-01',
+        billingPeriodEnd: '2026-02-01',
+        transactionCount: 0,
+      });
+
+      expect(bill.accountId).toBe('acc-bill');
+      expect(bill.currency).toBe('GBP');
+      expect(bill.totalGbp).toBe(20);
+    });
+
+    it('throws AccountNotFoundException for a bill request against an unknown account', async () => {
+      await expect(
+        service.calculateBill('missing', {
+          billingPeriodStart: '2026-01-01',
+          billingPeriodEnd: '2026-02-01',
+          transactionCount: 0,
+        }),
+      ).rejects.toThrow(AccountNotFoundException);
     });
   });
 });
